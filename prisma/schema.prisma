@@ -1,0 +1,160 @@
+// PostgreSQL CRM — run: npx prisma migrate dev
+// Env: DATABASE_URL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum LeadStatus {
+  active
+  no_reply
+  replied
+  booked_call
+  no_further_follow_up
+  dead
+}
+
+enum LeadNextAction {
+  cold_email
+  cold_call
+  follow_up
+  none
+}
+
+enum ContactMethod {
+  email
+  call
+}
+
+enum ScriptType {
+  cold_email
+  cold_call
+  follow_up
+}
+
+enum TouchpointType {
+  email
+  call
+}
+
+enum TouchOutcome {
+  no_reply
+  replied
+  booked_call
+}
+
+enum TaskType {
+  Tiering
+  Outreach
+  Enrichment
+}
+
+enum TaskStatus {
+  Pending
+  Done
+  Failed
+}
+
+model Lead {
+  id                     Int              @id @default(autoincrement())
+  companyName            String
+  website                String?
+  location               String?
+  phone                  String?
+  email                  String?
+  ownerName              String?
+  tier                   Int
+  status                 LeadStatus       @default(active)
+  lastContactDate        DateTime?
+  totalTouches           Int              @default(0)
+  enrichmentAttempts     Int              @default(0)
+  nextAction             LeadNextAction   @default(cold_email)
+  nextActionDate         DateTime?
+  preferredContactMethod ContactMethod    @default(email)
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+
+  touchpoints   Touchpoint[]
+  tasks         Task[]
+  dailyApplied  DailyAppliedLead[]
+
+  @@index([status])
+  @@index([tier])
+  @@index([companyName])
+  @@index([lastContactDate])
+}
+
+model Script {
+  id               Int        @id @default(autoincrement())
+  name             String
+  type             ScriptType
+  content          String     @db.Text
+  tier             Int
+  active           Boolean    @default(true)
+  performanceScore Float      @default(0)
+  totalSends       Int        @default(0)
+  replies          Int        @default(0)
+  bookedCalls      Int        @default(0)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  touchpoints Touchpoint[]
+
+  @@index([active, type, tier])
+}
+
+model Touchpoint {
+  id        Int           @id @default(autoincrement())
+  type      TouchpointType
+  date      DateTime      @default(now())
+  outcome   TouchOutcome
+  notes     String?       @db.Text
+  leadId    Int
+  scriptId  Int?
+  createdAt DateTime      @default(now())
+
+  lead   Lead    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  script Script? @relation(fields: [scriptId], references: [id], onDelete: SetNull)
+
+  @@index([leadId, date])
+  @@index([scriptId])
+}
+
+model Task {
+  id             Int        @id @default(autoincrement())
+  leadId         Int
+  type           TaskType
+  dueDate        DateTime?
+  status         TaskStatus @default(Pending)
+  aiGenerated    Boolean    @default(false)
+  aiInstructions String?    @db.Text
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId, status])
+  @@index([type, status])
+}
+
+/// Leads the user pinned to “today’s list” for a calendar day (UTC).
+model DailyAppliedLead {
+  id        Int      @id @default(autoincrement())
+  leadId    Int
+  appliedOn DateTime @db.Date
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@unique([leadId, appliedOn])
+  @@index([appliedOn])
+}
+
+model UserSettings {
+  id               String   @id @default("default")
+  maxDailyOutreach Int      @default(30)
+  updatedAt        DateTime @updatedAt
+}
