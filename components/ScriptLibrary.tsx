@@ -12,13 +12,17 @@ type Props = {
 export function ScriptLibrary({ scripts, onCreateScript, onDeleteScript }: Props) {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    await onCreateScript({
-      name: String(formData.get("name") ?? ""),
-      stage: String(formData.get("stage") ?? "cold_email") as Script["stage"],
-      content: String(formData.get("content") ?? "")
-    });
-    event.currentTarget.reset();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    try {
+      await onCreateScript({
+        name: String(formData.get("name") ?? ""),
+        stage: String(formData.get("stage") ?? "cold_email") as Script["stage"],
+        content: String(formData.get("content") ?? "")
+      });
+    } finally {
+      form.reset();
+    }
   };
 
   return (

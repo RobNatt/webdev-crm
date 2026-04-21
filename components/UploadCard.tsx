@@ -10,11 +10,15 @@ type Props = {
 export function UploadCard({ onUpload, busy }: Props) {
   const handleUpload = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     const file = formData.get("file");
     if (!(file instanceof File)) return;
-    await onUpload(file);
-    event.currentTarget.reset();
+    try {
+      await onUpload(file);
+    } finally {
+      form.reset();
+    }
   };
 
   return (

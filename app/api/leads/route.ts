@@ -27,6 +27,13 @@ export async function POST(request: NextRequest) {
 
   const rows = Array.isArray((body as { leads?: unknown }).leads) ? (body as { leads: Record<string, string>[] }).leads : [];
 
+  if (rows.length === 0) {
+    return jsonNoStore(
+      { error: "Empty leads array", hint: "Send JSON: { \"leads\": [ { \"company_name\": \"...\", ... }, ... ] }" },
+      { status: 400 }
+    );
+  }
+
   try {
     const existing = await prisma.lead.findMany({
       select: { companyName: true, website: true, phone: true }

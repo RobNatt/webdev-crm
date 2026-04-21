@@ -103,9 +103,8 @@ export function DashboardClient() {
         setMessage(`${json.error ?? `Upload failed (${response.status})`}${json.hint ? `. ${json.hint}` : ""}`);
         return;
       }
-      const emptyPart = json.skippedEmpty ? `, ${json.skippedEmpty} rows without a name` : "";
       setMessage(
-        `Imported ${json.createdCount ?? 0} leads. Skipped ${json.skippedDuplicates ?? 0} duplicates${emptyPart}.`
+        `Import finished: ${json.createdCount ?? 0} added, ${json.skippedDuplicates ?? 0} duplicates skipped, ${json.skippedEmpty ?? 0} missing company name (${rowsToSend.length} data rows sent).`
       );
       const created = json.leads;
       if (created?.length) {
