@@ -54,7 +54,8 @@ export async function loadAiContext() {
       lastContactDate: l.lastContactDate?.toISOString() ?? null,
       nextAction: l.nextAction,
       nextActionDate: l.nextActionDate?.toISOString() ?? null,
-      preferredContactMethod: l.preferredContactMethod
+      preferredContactMethod: l.preferredContactMethod,
+      noFurtherFollowUp: l.noFurtherFollowUp
     })),
     scripts: scripts.map((s) => ({
       id: s.id,

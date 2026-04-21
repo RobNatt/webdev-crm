@@ -1,5 +1,5 @@
-import { LeadNextAction, LeadStatus } from "@prisma/client";
 import { NextRequest } from "next/server";
+import { applyMarkLeadDead } from "../../../../lib/leadLifecycle";
 import { dbErrorResponse } from "../../../../lib/dbErrorResponse";
 import { jsonNoStore } from "../../../../lib/jsonNoStore";
 import { leadToApi, touchpointToApi } from "../../../../lib/mappers";
@@ -46,14 +46,14 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
 
     const body = await request.json();
     if (body.action === "mark_dead") {
-      const updated = await prisma.lead.update({
-        where: { id: leadId },
-        data: { status: LeadStatus.dead, nextAction: LeadNextAction.none }
-      });
+      const updated = await applyMarkLeadDead(leadId);
       return jsonNoStore({ lead: leadToApi(updated) });
     }
 
-    return jsonNoStore({ error: "Unsupported action" }, { status: 400 });
+    return jsonNoStore(
+      { error: "Unsupported action", hint: "Use PATCH /api/leads/{id}/status with mark_dead or unmark_dead" },
+      { status: 400 }
+    );
   } catch (e) {
     return dbErrorResponse(e);
   }

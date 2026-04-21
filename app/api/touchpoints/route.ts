@@ -118,7 +118,8 @@ export async function POST(request: NextRequest) {
           totalTouches: nextTouches,
           lastContactDate: new Date(),
           status,
-          ...(outcome === TouchOutcome.not_interested ? { nextAction: LeadNextAction.none } : {})
+          ...(outcome === TouchOutcome.not_interested ? { nextAction: LeadNextAction.none } : {}),
+          ...(status === LeadStatus.no_further_follow_up ? { noFurtherFollowUp: true } : {})
         }
       });
       return { tp, updatedLead };

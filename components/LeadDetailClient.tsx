@@ -5,7 +5,9 @@ import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "../lib/apiFetch";
 import { fetchJson } from "../lib/fetchJson";
 import type { Lead, LogTouchPayload, Script, TouchpointRow } from "../lib/types";
-import { LogTouchModal } from "./LogTouchModal";
+import { LeadDetailSummary } from "./lead-detail/LeadDetailSummary";
+import { LogTouchSection } from "./lead-detail/LogTouchSection";
+import { TouchpointTimeline } from "./lead-detail/TouchpointTimeline";
 import { Toast } from "./Toast";
 
 type Props = {
@@ -18,12 +20,15 @@ export function LeadDetailClient({ leadId }: Props) {
   const [scripts, setScripts] = useState<Script[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
     setToast(msg);
     window.setTimeout(() => setToast(null), 4000);
+  };
+
+  const scrollToLogTouch = () => {
+    document.getElementById("log-touch")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const load = useCallback(async () => {
@@ -63,25 +68,45 @@ export function LeadDetailClient({ leadId }: Props) {
   }, [load]);
 
   const handleLogTouchSubmit = async (payload: LogTouchPayload) => {
+    const body: Record<string, unknown> = {
+      lead_id: payload.leadId,
+      type: payload.type,
+      outcome: payload.outcome,
+      notes: payload.notes || undefined
+    };
+    if (typeof payload.scriptId === "number" && Number.isFinite(payload.scriptId)) {
+      body.script_id = payload.scriptId;
+    }
     const response = await apiFetch("/api/touchpoints", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        lead_id: payload.leadId,
-        type: payload.type,
-        outcome: payload.outcome,
-        notes: payload.notes || undefined
-      })
+      body: JSON.stringify(body)
     });
     const { ok, data: json } = await fetchJson<{ error?: string }>(response);
     if (!ok) throw new Error(json.error ?? "Could not log touch");
-    showToast("Touch recorded");
+    showToast("Touch saved — timeline updated.");
     await load();
   };
 
+  const isDead = lead?.status === "dead";
   const closed =
     lead &&
     (lead.status === "dead" || lead.status === "no_further_follow_up" || lead.touchCount >= 3);
+
+  const patchLeadStatus = async (action: "mark_dead" | "unmark_dead") => {
+    const response = await apiFetch(`/api/leads/${leadId}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action })
+    });
+    const { ok, data: json } = await fetchJson<{ error?: string }>(response);
+    if (!ok) {
+      showToast(json.error ?? "Could not update lead.");
+      return;
+    }
+    showToast(action === "mark_dead" ? "Marked as dead" : "Re-opened for follow-up");
+    await load();
+  };
 
   if (loading) {
     return (
@@ -103,54 +128,38 @@ export function LeadDetailClient({ leadId }: Props) {
   return (
     <main className="container">
       <Toast message={toast} />
-      <p>
-        <Link href="/">← Dashboard</Link>
+      <p style={{ marginBottom: 8 }}>
+        <Link href="/">← Back to dashboard</Link>
       </p>
-      <h1>{lead.companyName}</h1>
-      <p style={{ color: "#64748b" }}>
-        Tier {lead.tier} · {lead.status} · {lead.touchCount} touches · Last contact: {lead.lastContactDate ?? "—"}
-      </p>
-      <div className="row" style={{ marginBottom: 16 }}>
-        <button type="button" disabled={Boolean(closed)} onClick={() => setModalOpen(true)}>
-          Log touch
-        </button>
-      </div>
 
-      <div className="card">
-        <h3 style={{ marginTop: 0 }}>Touch history</h3>
-        {touchpoints.length === 0 ? (
-          <p>No touchpoints yet.</p>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Type</th>
-                <th>Outcome</th>
-                <th>Script</th>
-                <th>Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {touchpoints.map((t) => (
-                <tr key={t.id}>
-                  <td>{new Date(t.date).toLocaleString()}</td>
-                  <td>{t.type}</td>
-                  <td>{t.outcome}</td>
-                  <td>{t.scriptName ?? "—"}</td>
-                  <td style={{ maxWidth: 240, whiteSpace: "pre-wrap", fontSize: 13 }}>{t.notes ?? "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      <header style={{ marginBottom: 20 }}>
+        <h1 style={{ margin: "0 0 8px", fontSize: 26 }}>{lead.companyName}</h1>
+        <p style={{ margin: 0, color: "#64748b", fontSize: 14 }}>
+          Lead workspace · {lead.touchCount} touch{lead.touchCount === 1 ? "" : "es"} logged
+        </p>
+        <div className="row" style={{ marginTop: 14, flexWrap: "wrap", gap: 8 }}>
+          <button type="button" disabled={Boolean(closed)} onClick={scrollToLogTouch}>
+            Log touch
+          </button>
+          {!isDead ? (
+            <button type="button" disabled={Boolean(closed)} onClick={() => void patchLeadStatus("mark_dead")}>
+              Mark as dead
+            </button>
+          ) : (
+            <button type="button" onClick={() => void patchLeadStatus("unmark_dead")}>
+              Un-mark as dead
+            </button>
+          )}
+        </div>
+      </header>
 
-      <LogTouchModal
+      <LeadDetailSummary lead={lead} touchpointsNewestFirst={touchpoints} />
+      <TouchpointTimeline touchpoints={touchpoints} />
+      <LogTouchSection
         lead={lead}
+        touchpointsNewestFirst={touchpoints}
         scripts={scripts}
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        disabled={Boolean(closed)}
         onSubmit={handleLogTouchSubmit}
       />
     </main>

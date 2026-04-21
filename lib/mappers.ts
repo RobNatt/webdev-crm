@@ -21,7 +21,8 @@ export function leadToApi(lead: PrismaLead): Lead {
     nextAction: lead.nextAction as Lead["nextAction"],
     nextActionDate: toDateString(lead.nextActionDate),
     preferredContactMethod: lead.preferredContactMethod as Lead["preferredContactMethod"],
-    touchCount: lead.totalTouches
+    touchCount: lead.totalTouches,
+    noFurtherFollowUp: lead.noFurtherFollowUp
   };
 }
 

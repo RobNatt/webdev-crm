@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { LeadList } from "./LeadList";
 import { ScriptLibrary } from "./ScriptLibrary";
 import { Toast } from "./Toast";
@@ -13,23 +13,24 @@ import { mapCsvRowToApiLead, parseLeadsCsv } from "../lib/parseLeadsCsv";
 import type { Lead, LogTouchPayload, Script, TodoItem } from "../lib/types";
 
 export function DashboardClient() {
-  const [leads, setLeads] = useState<Lead[]>([]);
   const [scripts, setScripts] = useState<Script[]>([]);
   const [todo, setTodo] = useState<TodoItem[]>([]);
   const [cap, setCap] = useState<number>(30);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<string>("");
   const [toast, setToast] = useState<string | null>(null);
-  const [showDeadLeads, setShowDeadLeads] = useState(false);
+  const [showDeadInToday, setShowDeadInToday] = useState(false);
+  const [leadListVersion, setLeadListVersion] = useState(0);
 
-  const refresh = async () => {
-    const [leadRes, scriptRes, todoRes, settingsRes] = await Promise.all([
-      apiFetch("/api/leads"),
+  const bumpLeadList = () => setLeadListVersion((v) => v + 1);
+
+  const refresh = useCallback(async () => {
+    const todoUrl = `/api/today-todo?limit=30${showDeadInToday ? "&includeDead=1" : ""}`;
+    const [scriptRes, todoRes, settingsRes] = await Promise.all([
       apiFetch("/api/scripts"),
-      apiFetch("/api/today-todo?limit=30"),
+      apiFetch(todoUrl),
       apiFetch("/api/user-settings")
     ]);
-    const leadJson = await fetchJson<{ leads?: Lead[]; error?: string; hint?: string }>(leadRes);
     const scriptJson = await fetchJson<{ scripts?: Script[]; error?: string }>(scriptRes);
     const todoJson = await fetchJson<{ items?: TodoItem[]; effectiveCap?: number; error?: string }>(todoRes);
     const settingsJson = await fetchJson<{
@@ -39,18 +40,16 @@ export function DashboardClient() {
     }>(settingsRes);
 
     const parts: string[] = [];
-    if (!leadJson.ok) parts.push(`Leads: ${leadJson.data.error ?? leadJson.status}`);
     if (!scriptJson.ok) parts.push(`Scripts: ${scriptJson.data.error ?? scriptJson.status}`);
     if (!todoJson.ok) parts.push(`To-do: ${todoJson.data.error ?? todoJson.status}`);
     if (!settingsJson.ok) parts.push(`Settings: ${settingsJson.data.error ?? settingsJson.status}`);
     if (parts.length) {
-      const hint = leadJson.data.hint ?? settingsJson.data.hint;
+      const hint = settingsJson.data.hint;
       setMessage(
         `API error — ${parts.join(" · ")}.${hint ? ` ${hint}` : ""} Open /api/health to test the database.`
       );
     }
 
-    if (leadJson.ok) setLeads(leadJson.data.leads ?? []);
     if (scriptJson.ok) setScripts(scriptJson.data.scripts ?? []);
     if (todoJson.ok) {
       setTodo(todoJson.data.items ?? []);
@@ -62,14 +61,11 @@ export function DashboardClient() {
     } else if (settingsJson.ok) {
       setCap(settingsJson.data.userSettings?.maxDailyOutreach ?? 30);
     }
-  };
+  }, [showDeadInToday]);
 
   useEffect(() => {
     void refresh();
-  }, []);
-
-  const activeLeads = useMemo(() => leads.filter((lead) => lead.status !== "dead"), [leads]);
-  const deadLeads = useMemo(() => leads.filter((lead) => lead.status === "dead"), [leads]);
+  }, [refresh]);
 
   const handleUpload = async (file: File) => {
     setUploading(true);
@@ -108,14 +104,7 @@ export function DashboardClient() {
       setMessage(
         `Import finished: ${json.createdCount ?? 0} added, ${json.skippedDuplicates ?? 0} duplicates skipped, ${json.skippedEmpty ?? 0} missing company name (${rowsToSend.length} data rows sent).`
       );
-      const created = json.leads;
-      if (created?.length) {
-        setLeads((prev) => {
-          const merged = new Map<number, Lead>(prev.map((l) => [l.id, l]));
-          for (const row of created) merged.set(row.id, row);
-          return Array.from(merged.values()).sort((a, b) => a.id - b.id);
-        });
-      }
+      bumpLeadList();
       await refresh();
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Upload failed.");
@@ -166,21 +155,37 @@ export function DashboardClient() {
     setToast("Touch recorded");
     window.setTimeout(() => setToast(null), 4000);
     await refresh();
+    bumpLeadList();
   };
 
-  const handleMarkDead = async (leadId: number) => {
-    const res = await apiFetch(`/api/leads/${leadId}`, {
+  const patchLeadStatus = async (leadId: number, action: "mark_dead" | "unmark_dead") => {
+    const res = await apiFetch(`/api/leads/${leadId}/status`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "mark_dead" })
+      body: JSON.stringify({ action })
     });
     const { ok, data } = await fetchJson<{ error?: string }>(res);
     if (!ok) {
       setMessage(data.error ?? "Could not update lead.");
-      return;
+      return false;
     }
+    return true;
+  };
+
+  const handleMarkDead = async (leadId: number) => {
+    const ok = await patchLeadStatus(leadId, "mark_dead");
+    if (!ok) return;
     setMessage("Lead marked as dead.");
     await refresh();
+    bumpLeadList();
+  };
+
+  const handleUnmarkDead = async (leadId: number) => {
+    const ok = await patchLeadStatus(leadId, "unmark_dead");
+    if (!ok) return;
+    setMessage("Lead re-opened for follow-up.");
+    await refresh();
+    bumpLeadList();
   };
 
   return (
@@ -189,33 +194,18 @@ export function DashboardClient() {
       <p>AI-assisted outreach workflow with 3-touch cadence and 20-30/day hard cap.</p>
       <Toast message={toast} />
       {message ? <p>{message}</p> : null}
-      <div className="row" style={{ marginBottom: 8 }}>
-        <button onClick={() => setShowDeadLeads((prev) => !prev)}>
-          {showDeadLeads ? "Back to Active Leads" : `Dead Leads (${deadLeads.length})`}
-        </button>
-      </div>
       <div className="workspace">
         <section style={{ minWidth: 0 }}>
           <UploadCard onUpload={handleUpload} busy={uploading} />
           <div style={{ marginTop: 16 }}>
-            {showDeadLeads ? (
-              <LeadList
-                title="Dead Leads"
-                leads={deadLeads}
-                scripts={scripts}
-                onLogTouchSubmit={handleLogTouchSubmit}
-                onMarkDead={handleMarkDead}
-                readOnly
-              />
-            ) : (
-              <LeadList
-                title="Active Leads"
-                leads={activeLeads}
-                scripts={scripts}
-                onLogTouchSubmit={handleLogTouchSubmit}
-                onMarkDead={handleMarkDead}
-              />
-            )}
+            <LeadList
+              scripts={scripts}
+              refreshVersion={leadListVersion}
+              onLogTouchSubmit={handleLogTouchSubmit}
+              onMarkDead={handleMarkDead}
+              onUnmarkDead={handleUnmarkDead}
+              onFetchError={(msg) => setMessage(msg)}
+            />
           </div>
           <div style={{ marginTop: 16 }}>
             <ScriptLibrary scripts={scripts} onCreateScript={handleCreateScript} onDeleteScript={handleDeleteScript} />
@@ -223,7 +213,12 @@ export function DashboardClient() {
         </section>
         <div className="workspace-aside">
           <AIAssistantPanel onAppliedAction={refresh} />
-          <TodayToDoPanel items={todo} cap={cap} />
+          <TodayToDoPanel
+            items={todo}
+            cap={cap}
+            showDeadInToday={showDeadInToday}
+            onShowDeadInTodayChange={setShowDeadInToday}
+          />
         </div>
       </div>
     </main>

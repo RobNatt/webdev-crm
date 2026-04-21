@@ -16,6 +16,8 @@ export type LogTouchPayload = {
   type: Method;
   outcome: LeadTouchOutcome;
   notes: string;
+  /** When set, sent as `script_id` so the logged touch matches the chosen script. */
+  scriptId?: number;
 };
 
 export type TouchpointRow = {
@@ -43,6 +45,17 @@ export type Lead = {
   nextActionDate?: string;
   preferredContactMethod: Method;
   touchCount: number;
+  noFurtherFollowUp?: boolean;
+  /** Latest touch outcome (from list API join), for reply-type column. */
+  lastTouchOutcome?: string | null;
+};
+
+/** Paginated `GET /api/leads` response. */
+export type LeadsListApiResponse = {
+  leads: Lead[];
+  total: number;
+  page: number;
+  pageSize: number;
 };
 
 export type AIRecommendedAction = {
@@ -85,4 +98,6 @@ export type TodoItem = {
   scriptName: string;
   overdue: boolean;
   status: "pending" | "done";
+  /** Present when returned from today-todo (for client filtering / badges). */
+  leadStatus?: LeadStatus;
 };

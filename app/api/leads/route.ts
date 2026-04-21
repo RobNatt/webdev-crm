@@ -3,15 +3,45 @@ import { NextRequest } from "next/server";
 import { dbErrorResponse } from "../../../lib/dbErrorResponse";
 import { leadIdentityKey } from "../../../lib/leadIdentity";
 import { jsonNoStore } from "../../../lib/jsonNoStore";
+import { parseLeadListQuery } from "../../../lib/leadsListParams";
+import { prismaWhereFromLeadListQuery } from "../../../lib/leadsListWhere";
 import { leadToApi } from "../../../lib/mappers";
 import { prisma } from "../../../lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const rows = await prisma.lead.findMany({ orderBy: { id: "asc" } });
-    return jsonNoStore({ leads: rows.map(leadToApi) });
+    const q = parseLeadListQuery(request.nextUrl.searchParams);
+    const where = prismaWhereFromLeadListQuery(q);
+    const skip = (q.page - 1) * q.pageSize;
+
+    const [total, rows] = await prisma.$transaction([
+      prisma.lead.count({ where }),
+      prisma.lead.findMany({
+        where,
+        orderBy: { id: "asc" },
+        skip,
+        take: q.pageSize,
+        include: {
+          touchpoints: {
+            orderBy: { date: "desc" },
+            take: 1,
+            select: { outcome: true }
+          }
+        }
+      })
+    ]);
+
+    const leads = rows.map((row) => {
+      const { touchpoints, ...rest } = row;
+      return {
+        ...leadToApi(rest),
+        lastTouchOutcome: touchpoints[0]?.outcome ?? null
+      };
+    });
+
+    return jsonNoStore({ leads, total, page: q.page, pageSize: q.pageSize });
   } catch (e) {
     return dbErrorResponse(e);
   }

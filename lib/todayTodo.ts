@@ -24,7 +24,15 @@ export function startOfUtcDay(d = new Date()) {
   return x;
 }
 
-export async function generateTodayTodo(requestedLimit?: number): Promise<TodoItem[]> {
+export type GenerateTodayTodoOptions = {
+  /** When true, dead leads can appear in the list (still capped); default hides them. */
+  includeDead?: boolean;
+};
+
+export async function generateTodayTodo(
+  requestedLimit?: number,
+  options?: GenerateTodayTodoOptions
+): Promise<TodoItem[]> {
   const maxDaily = await getMaxDailyOutreach();
   const effectiveCap = getEffectiveCap(requestedLimit, maxDaily);
 
@@ -34,7 +42,9 @@ export async function generateTodayTodo(requestedLimit?: number): Promise<TodoIt
   });
   const appliedTodayLeadIds = new Set(appliedRows.map((r) => r.leadId));
 
-  const closed: LeadStatus[] = [LeadStatus.dead, LeadStatus.booked_call, LeadStatus.no_further_follow_up];
+  const closed: LeadStatus[] = options?.includeDead
+    ? [LeadStatus.booked_call, LeadStatus.no_further_follow_up]
+    : [LeadStatus.dead, LeadStatus.booked_call, LeadStatus.no_further_follow_up];
 
   const allLeads = await prisma.lead.findMany({
     where: {
@@ -65,7 +75,16 @@ export async function generateTodayTodo(requestedLimit?: number): Promise<TodoIt
       })
       .sort((a, b) => b.performanceScore - a.performanceScore);
 
-    const selectedScript = matching[0];
+    let selectedScript = matching[0];
+    if (
+      !selectedScript &&
+      options?.includeDead &&
+      lead.status === LeadStatus.dead
+    ) {
+      selectedScript = scripts
+        .filter((s) => s.active && s.tier === lead.tier)
+        .sort((a, b) => b.performanceScore - a.performanceScore)[0];
+    }
     if (!selectedScript) continue;
 
     const nd = lead.nextActionDate ? lead.nextActionDate.toISOString().slice(0, 10) : null;
@@ -96,6 +115,7 @@ export async function generateTodayTodo(requestedLimit?: number): Promise<TodoIt
     scriptId: item.selectedScript.id,
     scriptName: item.selectedScript.name,
     overdue: item.overdue,
-    status: "pending" as const
+    status: "pending" as const,
+    leadStatus: item.lead.status as TodoItem["leadStatus"]
   }));
 }
