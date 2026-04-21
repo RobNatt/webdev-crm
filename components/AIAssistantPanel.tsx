@@ -2,6 +2,7 @@
 
 import { experimental_useObject } from "@ai-sdk/react";
 import { FormEvent, useMemo, useState } from "react";
+import { apiFetch } from "../lib/apiFetch";
 import { crmAssistantResultSchema, type CrmAssistantResult } from "../lib/crmAiSchema";
 
 type ChatMessage =
@@ -32,7 +33,7 @@ export function AIAssistantPanel({ onAppliedAction }: Props) {
     api: "/api/ai/chat",
     schema: crmAssistantResultSchema,
     fetch: async (url, options) => {
-      const res = await fetch(url, options);
+      const res = await apiFetch(url as RequestInfo, options);
       if (!res.ok) {
         const body = await res.text();
         let detail = body;
@@ -85,7 +86,7 @@ export function AIAssistantPanel({ onAppliedAction }: Props) {
     const leads = latestCrm?.recommendedLeads ?? [];
     const leadIds = leads.map((row) => row.leadId).filter((id): id is number => typeof id === "number");
     if (!leadIds.length) return;
-    await fetch("/api/today-todo/apply", {
+    await apiFetch("/api/today-todo/apply", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ leadIds })
@@ -97,7 +98,7 @@ export function AIAssistantPanel({ onAppliedAction }: Props) {
     const leads = latestCrm?.enrichCandidates ?? [];
     const leadIds = leads.map((row) => row.leadId).filter((id): id is number => typeof id === "number");
     if (!leadIds.length) return;
-    await fetch("/api/enrichment/queue", {
+    await apiFetch("/api/enrichment/queue", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ leadIds })
@@ -108,7 +109,7 @@ export function AIAssistantPanel({ onAppliedAction }: Props) {
   const saveSuggestedScript = async () => {
     const top = latestCrm?.scriptsToUse?.[0];
     if (!top?.scriptId) return;
-    await fetch("/api/scripts", {
+    await apiFetch("/api/scripts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

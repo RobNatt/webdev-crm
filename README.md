@@ -27,17 +27,25 @@ This is a focused internal tool, not a full multi‑tenant SaaS.
 
    | Variable | Required | Purpose |
    |----------|----------|---------|
-   | `DATABASE_URL` | Yes | Postgres connection string |
+   | `DATABASE_URL` | Yes | Postgres connection string (**Prisma requires this name** in `schema.prisma`) |
    | `GROQ_API_KEY` | No | Powers `POST /api/ai/chat` (streaming). Without it, that route returns **503**; the rest of the app works |
 
-3. **Install and schema**
+3. **Install and create tables**
+
+   This repo includes **`prisma/migrations`** — apply them so API routes do not return 500:
 
    ```bash
    npm install
-   npx prisma migrate dev --name init
+   npm run db:deploy
    ```
 
-   Quick prototype without migration history:
+   For local development with new migration files:
+
+   ```bash
+   npm run db:migrate
+   ```
+
+   Quick prototype **without** migration files (not recommended if you use `migrate deploy` in prod):
 
    ```bash
    npm run db:push
@@ -56,6 +64,8 @@ This is a focused internal tool, not a full multi‑tenant SaaS.
    ```
 
    Open [http://localhost:3000](http://localhost:3000).
+
+   **Sanity check:** [http://localhost:3000/api/health](http://localhost:3000/api/health) should return `{ "ok": true, "database": "connected" }`. If not, fix `DATABASE_URL` and run **`npm run db:deploy`** again.
 
 ## How to use the app
 
@@ -86,6 +96,7 @@ This is a focused internal tool, not a full multi‑tenant SaaS.
 | `GET/PATCH /api/user-settings` | Daily outreach cap (clamped 20–30 in logic) |
 | `POST /api/ai` | Non‑streaming, deterministic assistant JSON |
 | `POST /api/ai/chat` | Streaming structured object (Groq); requires `GROQ_API_KEY` |
+| `GET /api/health` | Returns whether Postgres is reachable (`SELECT 1`) |
 
 Streaming clients should use the **same Zod schema** as the server (`lib/crmAiSchema.ts`) with `experimental_useObject` from `@ai-sdk/react` (see `components/AIAssistantPanel.tsx`).
 
@@ -99,14 +110,23 @@ Streaming clients should use the **same Zod schema** as the server (`lib/crmAiSc
 | `npm run lint` | ESLint |
 | `npm run db:push` | Push schema without migrations |
 | `npm run db:migrate` | `prisma migrate dev` |
+| `npm run db:deploy` | `prisma migrate deploy` (production / CI) |
 | `npm run db:seed` | Seed sample data |
 
 ## Deploy (Vercel)
 
-- Set **`DATABASE_URL`** (hosted Postgres).
+- Set **`DATABASE_URL`** (hosted Postgres). For Neon / many hosts, use the URL that supports **SSL** (often `?sslmode=require`). Prisma’s schema only reads **`DATABASE_URL`**; if your provider gives **`POSTGRES_URL`** only, paste the same value into **`DATABASE_URL`** in Vercel (the app needs it at **runtime** too). For one-off CLI runs, `POSTGRES_URL=... npm run db:deploy` works: `scripts/run-prisma.mjs` copies it when `DATABASE_URL` is unset.
 - Set **`GROQ_API_KEY`** if you want the streaming AI route in production.
+- **Apply migrations to the production database** (the app will 503 on all data routes until tables exist):
+
+  ```bash
+  DATABASE_URL="your-production-postgres-url" npm run db:deploy
+  ```
+
+  Or set Vercel **Build Command** to `npx prisma migrate deploy && npm run build` and ensure `DATABASE_URL` is exposed at **build** time (not only runtime), then redeploy.
+
 - Build: `npm run build` (includes `prisma generate`).
-- Apply migrations to production: `npx prisma migrate deploy` (from CI or locally with prod `DATABASE_URL`).
+- After deploy, open **`/api/health`** on your site to confirm the DB is connected.
 
 ## Data model (short)
 

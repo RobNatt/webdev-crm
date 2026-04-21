@@ -20,7 +20,11 @@ export function UploadCard({ onUpload, busy }: Props) {
   return (
     <div className="card">
       <h3>Upload Leads CSV</h3>
-      <p>Drop Google Maps lead CSV to ingest new leads.</p>
+      <p>
+        CSV with quoted fields is supported. Business name: <code>company_name</code>, <code>Title</code>,{" "}
+        <code>Name</code>, etc. Optional: <code>website</code>, <code>phone</code>, <code>email</code>,{" "}
+        <code>address</code>.
+      </p>
       <form className="row" onSubmit={handleUpload}>
         <input name="file" type="file" accept=".csv" required />
         <button type="submit" disabled={busy}>

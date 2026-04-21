@@ -1,10 +1,12 @@
 import { TaskStatus, TaskType } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
+import { dbErrorResponse } from "../../../lib/dbErrorResponse";
 import { prisma } from "../../../lib/prisma";
 import { generateTodayTodo, getEffectiveCap, getMaxDailyOutreach } from "../../../lib/todayTodo";
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
+  try {
+    const body = await request.json();
   const messages = Array.isArray(body.messages) ? body.messages : [];
   const userMessage = String(messages[messages.length - 1]?.content ?? "").trim();
   const command = userMessage.startsWith("/") ? userMessage.split(/\s+/)[0] : "";
@@ -89,5 +91,8 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  return NextResponse.json(payload);
+    return NextResponse.json(payload);
+  } catch (e) {
+    return dbErrorResponse(e);
+  }
 }

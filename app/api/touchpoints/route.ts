@@ -1,5 +1,6 @@
 import { LeadStatus, TouchOutcome, TouchpointType } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
+import { dbErrorResponse } from "../../../lib/dbErrorResponse";
 import { leadToApi } from "../../../lib/mappers";
 import { prisma } from "../../../lib/prisma";
 import { recomputeScriptStats } from "../../../lib/scriptStats";
@@ -22,13 +23,14 @@ function mapTouchType(raw: string | undefined): TouchpointType {
 }
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const leadId = Number(body.lead_id);
-  const scriptId = Number(body.script_id);
-  const outcome = mapOutcome(body.outcome);
-  const touchType = mapTouchType(body.type);
+  try {
+    const body = await request.json();
+    const leadId = Number(body.lead_id);
+    const scriptId = Number(body.script_id);
+    const outcome = mapOutcome(body.outcome);
+    const touchType = mapTouchType(body.type);
 
-  const lead = await prisma.lead.findUnique({ where: { id: leadId } });
+    const lead = await prisma.lead.findUnique({ where: { id: leadId } });
   if (!lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
 
   if (lead.totalTouches >= 3 || lead.status === LeadStatus.dead || lead.status === LeadStatus.no_further_follow_up) {
@@ -66,17 +68,20 @@ export async function POST(request: NextRequest) {
 
   const refreshedScript = await prisma.script.findUnique({ where: { id: scriptId } });
 
-  return NextResponse.json({
-    success: true,
-    lead: leadToApi(updatedLead),
-    scriptPerformance: refreshedScript
-      ? {
-          scriptId: refreshedScript.id,
-          totalSends: refreshedScript.totalSends,
-          replies: refreshedScript.replies,
-          bookedCalls: refreshedScript.bookedCalls,
-          performanceScore: refreshedScript.performanceScore
-        }
-      : undefined
-  });
+    return NextResponse.json({
+      success: true,
+      lead: leadToApi(updatedLead),
+      scriptPerformance: refreshedScript
+        ? {
+            scriptId: refreshedScript.id,
+            totalSends: refreshedScript.totalSends,
+            replies: refreshedScript.replies,
+            bookedCalls: refreshedScript.bookedCalls,
+            performanceScore: refreshedScript.performanceScore
+          }
+        : undefined
+    });
+  } catch (e) {
+    return dbErrorResponse(e);
+  }
 }

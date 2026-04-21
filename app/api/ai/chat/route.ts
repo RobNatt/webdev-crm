@@ -51,7 +51,16 @@ export async function POST(req: Request) {
     command = message.split(/\s+/)[0] ?? null;
   }
 
-  const context = await loadAiContext();
+  let context: Awaited<ReturnType<typeof loadAiContext>>;
+  try {
+    context = await loadAiContext();
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Database error";
+    return new Response(JSON.stringify({ error: message, hint: "Run: npx prisma migrate deploy" }), {
+      status: 503,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
 
   const groq = createGroq({ apiKey });
   const model = groq("llama-3.3-70b-versatile");
