@@ -8,6 +8,25 @@ export type LeadStatus =
 
 export type Method = "email" | "call";
 export type Outcome = "no_reply" | "replied" | "booked_call";
+/** Touch log reply / outcome (matches Prisma TouchOutcome after migration). */
+export type LeadTouchOutcome = "no_reply" | "replied" | "booked_call" | "not_interested";
+
+export type LogTouchPayload = {
+  leadId: number;
+  type: Method;
+  outcome: LeadTouchOutcome;
+  notes: string;
+};
+
+export type TouchpointRow = {
+  id: number;
+  type: Method;
+  outcome: string;
+  date: string;
+  notes?: string;
+  scriptId: number | null;
+  scriptName?: string;
+};
 
 export type Lead = {
   id: number;

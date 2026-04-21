@@ -46,6 +46,7 @@ enum TouchOutcome {
   no_reply
   replied
   booked_call
+  not_interested
 }
 
 enum TaskType {

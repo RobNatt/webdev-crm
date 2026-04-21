@@ -87,9 +87,11 @@ This is a focused internal tool, not a full multi‑tenant SaaS.
 
 | Route | Role |
 |-------|------|
-| `GET/POST /api/leads` | CRUD leads |
+| `GET/POST /api/leads` | List / create leads |
+| `GET/PATCH /api/leads/[id]` | Lead detail + touch history; mark dead |
 | `GET/POST /api/scripts` | List / create scripts |
-| `GET/POST /api/touchpoints` | Log touches |
+| `GET /api/touchpoints?leadId=` | Touch history for one lead |
+| `POST /api/touchpoints` | Create touchpoint; updates `Lead.lastContactDate` and `totalTouches` |
 | `GET /api/today-todo` | Today’s ranked list |
 | `POST /api/today-todo/apply` | Body `{ "leadIds": number[] }` — pin to today (respects cap) |
 | `POST /api/enrichment/queue` | Body `{ "leadIds": number[] }` — queue enrichment tasks |

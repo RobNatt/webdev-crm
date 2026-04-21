@@ -1,5 +1,5 @@
-import type { Lead as PrismaLead, Script as PrismaScript } from "@prisma/client";
-import type { Lead, Script } from "./types";
+import type { Lead as PrismaLead, Script as PrismaScript, Touchpoint as PrismaTouchpoint } from "@prisma/client";
+import type { Lead, Script, TouchpointRow } from "./types";
 
 export function toDateString(d: Date | null | undefined): string | undefined {
   if (!d) return undefined;
@@ -22,6 +22,20 @@ export function leadToApi(lead: PrismaLead): Lead {
     nextActionDate: toDateString(lead.nextActionDate),
     preferredContactMethod: lead.preferredContactMethod as Lead["preferredContactMethod"],
     touchCount: lead.totalTouches
+  };
+}
+
+export function touchpointToApi(
+  t: PrismaTouchpoint & { script?: { id: number; name: string } | null }
+): TouchpointRow {
+  return {
+    id: t.id,
+    type: t.type as TouchpointRow["type"],
+    outcome: t.outcome,
+    date: t.date.toISOString(),
+    notes: t.notes ?? undefined,
+    scriptId: t.scriptId,
+    scriptName: t.script?.name
   };
 }
 

@@ -3,13 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { LeadList } from "./LeadList";
 import { ScriptLibrary } from "./ScriptLibrary";
+import { Toast } from "./Toast";
 import { TodayToDoPanel } from "./TodayToDoPanel";
 import { UploadCard } from "./UploadCard";
 import { AIAssistantPanel } from "./AIAssistantPanel";
 import { apiFetch } from "../lib/apiFetch";
 import { fetchJson } from "../lib/fetchJson";
 import { mapCsvRowToApiLead, parseLeadsCsv } from "../lib/parseLeadsCsv";
-import { Lead, Script, TodoItem } from "../lib/types";
+import type { Lead, LogTouchPayload, Script, TodoItem } from "../lib/types";
 
 export function DashboardClient() {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -18,6 +19,7 @@ export function DashboardClient() {
   const [cap, setCap] = useState<number>(30);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<string>("");
+  const [toast, setToast] = useState<string | null>(null);
   const [showDeadLeads, setShowDeadLeads] = useState(false);
 
   const refresh = async () => {
@@ -148,33 +150,21 @@ export function DashboardClient() {
     await refresh();
   };
 
-  const handleLogTouch = async (leadId: number, outcome: "no_reply" | "replied" | "booked_call") => {
-    const lead = leads.find((item) => item.id === leadId);
-    if (!lead) return;
-    const recommended = scripts
-      .filter((script) => script.tier === lead.tier && script.active)
-      .sort((a, b) => b.performanceScore - a.performanceScore)[0];
-    if (!recommended) {
-      setMessage("No active script found for this tier.");
-      return;
-    }
-
+  const handleLogTouchSubmit = async (payload: LogTouchPayload) => {
     const response = await apiFetch("/api/touchpoints", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        lead_id: leadId,
-        script_id: recommended.id,
-        type: lead.preferredContactMethod,
-        outcome
+        lead_id: payload.leadId,
+        type: payload.type,
+        outcome: payload.outcome,
+        notes: payload.notes || undefined
       })
     });
     const { ok, data: json } = await fetchJson<{ error?: string }>(response);
-    if (!ok) {
-      setMessage(json.error ?? "Could not log touchpoint.");
-      return;
-    }
-    setMessage("Touchpoint logged.");
+    if (!ok) throw new Error(json.error ?? "Could not log touchpoint.");
+    setToast("Touch recorded");
+    window.setTimeout(() => setToast(null), 4000);
     await refresh();
   };
 
@@ -197,6 +187,7 @@ export function DashboardClient() {
     <main className="container">
       <h1>webdev-crm</h1>
       <p>AI-assisted outreach workflow with 3-touch cadence and 20-30/day hard cap.</p>
+      <Toast message={toast} />
       {message ? <p>{message}</p> : null}
       <div className="row" style={{ marginBottom: 8 }}>
         <button onClick={() => setShowDeadLeads((prev) => !prev)}>
@@ -211,12 +202,19 @@ export function DashboardClient() {
               <LeadList
                 title="Dead Leads"
                 leads={deadLeads}
-                onLogTouch={handleLogTouch}
+                scripts={scripts}
+                onLogTouchSubmit={handleLogTouchSubmit}
                 onMarkDead={handleMarkDead}
                 readOnly
               />
             ) : (
-              <LeadList title="Active Leads" leads={activeLeads} onLogTouch={handleLogTouch} onMarkDead={handleMarkDead} />
+              <LeadList
+                title="Active Leads"
+                leads={activeLeads}
+                scripts={scripts}
+                onLogTouchSubmit={handleLogTouchSubmit}
+                onMarkDead={handleMarkDead}
+              />
             )}
           </div>
           <div style={{ marginTop: 16 }}>

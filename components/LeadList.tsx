@@ -1,18 +1,21 @@
 "use client";
 
-import { Lead } from "../lib/types";
+import Link from "next/link";
 import { useState } from "react";
+import type { Lead, LogTouchPayload, Script } from "../lib/types";
+import { LogTouchModal } from "./LogTouchModal";
 
 type Props = {
   title?: string;
   leads: Lead[];
-  onLogTouch: (leadId: number, outcome: "no_reply" | "replied" | "booked_call") => Promise<void>;
+  scripts: Script[];
+  onLogTouchSubmit: (payload: LogTouchPayload) => Promise<void>;
   onMarkDead: (leadId: number) => Promise<void>;
   readOnly?: boolean;
 };
 
-export function LeadList({ title = "Leads", leads, onLogTouch, onMarkDead, readOnly = false }: Props) {
-  const [selectedOutcome, setSelectedOutcome] = useState<Record<number, "no_reply" | "replied" | "booked_call">>({});
+export function LeadList({ title = "Leads", leads, scripts, onLogTouchSubmit, onMarkDead, readOnly = false }: Props) {
+  const [touchLead, setTouchLead] = useState<Lead | null>(null);
 
   return (
     <div className="card">
@@ -33,34 +36,29 @@ export function LeadList({ title = "Leads", leads, onLogTouch, onMarkDead, readO
             const closed = lead.status === "dead" || lead.status === "no_further_follow_up" || lead.touchCount >= 3;
             return (
               <tr key={lead.id}>
-                <td>{lead.companyName}</td>
+                <td>
+                  <Link href={`/leads/${lead.id}`}>{lead.companyName}</Link>
+                </td>
                 <td>{lead.tier}</td>
                 <td>{lead.lastContactDate ?? "-"}</td>
                 <td>{lead.status}</td>
                 <td>{lead.nextAction}</td>
                 <td>
-                  <select
-                    value={selectedOutcome[lead.id] ?? "no_reply"}
-                    onChange={(event) =>
-                      setSelectedOutcome((prev) => ({
-                        ...prev,
-                        [lead.id]: event.target.value as "no_reply" | "replied" | "booked_call"
-                      }))
-                    }
-                    disabled={closed || readOnly}
-                  >
-                    <option value="no_reply">no_reply</option>
-                    <option value="replied">replied</option>
-                    <option value="booked_call">booked_call</option>
-                  </select>
                   <button
+                    type="button"
                     disabled={closed || readOnly}
-                    onClick={() => onLogTouch(lead.id, selectedOutcome[lead.id] ?? "no_reply")}
-                    style={{ marginLeft: 8 }}
+                    onClick={() => {
+                      if (!closed && !readOnly) setTouchLead(lead);
+                    }}
                   >
                     Log touch
                   </button>
-                  <button style={{ marginLeft: 8 }} disabled={closed || readOnly} onClick={() => onMarkDead(lead.id)}>
+                  <button
+                    type="button"
+                    style={{ marginLeft: 8 }}
+                    disabled={closed || readOnly}
+                    onClick={() => onMarkDead(lead.id)}
+                  >
                     Mark as dead
                   </button>
                   {closed ? <div style={{ color: "#a33", marginTop: 4 }}>Lead is dead/closed.</div> : null}
@@ -70,6 +68,14 @@ export function LeadList({ title = "Leads", leads, onLogTouch, onMarkDead, readO
           })}
         </tbody>
       </table>
+
+      <LogTouchModal
+        lead={touchLead}
+        scripts={scripts}
+        open={touchLead !== null}
+        onClose={() => setTouchLead(null)}
+        onSubmit={onLogTouchSubmit}
+      />
     </div>
   );
 }
