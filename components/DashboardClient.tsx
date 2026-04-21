@@ -30,7 +30,11 @@ export function DashboardClient() {
     const leadJson = await fetchJson<{ leads?: Lead[]; error?: string; hint?: string }>(leadRes);
     const scriptJson = await fetchJson<{ scripts?: Script[]; error?: string }>(scriptRes);
     const todoJson = await fetchJson<{ items?: TodoItem[]; effectiveCap?: number; error?: string }>(todoRes);
-    const settingsJson = await fetchJson<{ userSettings?: { maxDailyOutreach: number }; error?: string }>(settingsRes);
+    const settingsJson = await fetchJson<{
+      userSettings?: { maxDailyOutreach: number };
+      error?: string;
+      hint?: string;
+    }>(settingsRes);
 
     const parts: string[] = [];
     if (!leadJson.ok) parts.push(`Leads: ${leadJson.data.error ?? leadJson.status}`);
