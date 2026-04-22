@@ -76,22 +76,44 @@ export function LeadList({
     });
   }, [tab, debouncedSearch, stagesKey, tiersKey, lastContact, page]);
 
+  /** If filters shrink the result set, avoid requesting a past page (empty rows, total > 0). */
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    if (page > maxPage) {
+      setPage(maxPage);
+    }
+  }, [total, page]);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const res = await apiFetch(`/api/leads?${queryString}`);
-      const parsed = await fetchJson<LeadsListApiResponse & { error?: string }>(res);
-      if (cancelled) return;
-      if (!parsed.ok) {
-        onFetchErrorRef.current?.(parsed.data.error ?? `Could not load leads (${parsed.status}).`);
-        setLeads([]);
-        setTotal(0);
-      } else {
-        setLeads(parsed.data.leads ?? []);
-        setTotal(parsed.data.total ?? 0);
+      try {
+        const qs = queryString;
+        const url = qs.length > 0 ? `/api/leads?${qs}` : "/api/leads";
+        const res = await apiFetch(url);
+        const parsed = await fetchJson<LeadsListApiResponse & { error?: string }>(res);
+        if (cancelled) return;
+        if (!parsed.ok) {
+          onFetchErrorRef.current?.(parsed.data.error ?? `Could not load leads (${parsed.status}).`);
+          setLeads([]);
+          setTotal(0);
+        } else {
+          const list = parsed.data.leads;
+          setLeads(Array.isArray(list) ? list : []);
+          const rawTotal = parsed.data.total;
+          const n = typeof rawTotal === "number" ? rawTotal : Number(rawTotal);
+          setTotal(Number.isFinite(n) ? n : 0);
+        }
+      } catch {
+        if (!cancelled) {
+          onFetchErrorRef.current?.("Could not load leads (network error).");
+          setLeads([]);
+          setTotal(0);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      setLoading(false);
     })();
     return () => {
       cancelled = true;
