@@ -7,6 +7,7 @@ import type { LastContactWindow, LeadListTab, LeadStageFilter } from "../lib/lea
 import { serializeLeadListQuery } from "../lib/leadsListParams";
 import type { Lead, LeadsListApiResponse, LogTouchPayload, Script } from "../lib/types";
 import { LeadFilters } from "./LeadFilters";
+import listStyles from "./LeadList.module.css";
 import { LeadSummaryStats, type LeadSummaryStatsData } from "./LeadSummaryStats";
 import { LeadTable } from "./LeadTable";
 import { LogTouchModal } from "./LogTouchModal";
@@ -15,6 +16,7 @@ const PAGE_SIZE = 25;
 
 type Props = {
   scripts: Script[];
+  activeScripts: number;
   /** Increment from parent after imports / status changes to refetch the current page. */
   refreshVersion: number;
   onLogTouchSubmit: (payload: LogTouchPayload) => Promise<void>;
@@ -25,6 +27,7 @@ type Props = {
 
 export function LeadList({
   scripts,
+  activeScripts,
   refreshVersion,
   onLogTouchSubmit,
   onMarkDead,
@@ -150,32 +153,38 @@ export function LeadList({
 
   return (
     <>
-      <LeadSummaryStats stats={pipelineStats} loading={statsLoading} error={statsError} />
+      <LeadSummaryStats
+        stats={pipelineStats}
+        loading={statsLoading}
+        error={statsError}
+        activeScripts={activeScripts}
+      />
       <div className="card">
-      <h3 style={{ marginTop: 0 }}>Leads</h3>
-      <LeadFilters
-        tab={tab}
-        onTab={handleTab}
-        search={search}
-        onSearch={setSearch}
-        stages={stages}
-        onToggleStage={handleToggleStage}
-        tiers={tiers}
-        onToggleTier={handleToggleTier}
-        lastContact={lastContact}
-        onLastContact={handleLastContact}
-      />
-      <LeadTable
-        leads={leads}
-        loading={loading}
-        total={total}
-        page={page}
-        pageSize={PAGE_SIZE}
-        onPageChange={setPage}
-        onLogTouch={setTouchLead}
-        onMarkDead={onMarkDead}
-        onUnmarkDead={onUnmarkDead}
-      />
+        <h3 className={listStyles.leadsCardTitle}>Leads</h3>
+        <LeadFilters
+          tab={tab}
+          onTab={handleTab}
+          search={search}
+          onSearch={setSearch}
+          stages={stages}
+          onToggleStage={handleToggleStage}
+          tiers={tiers}
+          onToggleTier={handleToggleTier}
+          lastContact={lastContact}
+          onLastContact={handleLastContact}
+        />
+        <LeadTable
+          leads={leads}
+          loading={loading}
+          total={total}
+          page={page}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+          onLogTouch={setTouchLead}
+          onMarkDead={onMarkDead}
+          onUnmarkDead={onUnmarkDead}
+        />
+      </div>
       <LogTouchModal
         lead={touchLead}
         scripts={scripts}
@@ -183,7 +192,6 @@ export function LeadList({
         onClose={() => setTouchLead(null)}
         onSubmit={onLogTouchSubmit}
       />
-    </div>
     </>
   );
 }

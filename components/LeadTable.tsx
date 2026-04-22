@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { Lead } from "../lib/types";
 import { formatLeadRowStatus, formatTouchOutcomeLabel } from "../lib/leadStatusLabels";
+import styles from "./LeadTable.module.css";
 
 type Props = {
   leads: Lead[];
@@ -38,127 +39,129 @@ export function LeadTable({
 
   return (
     <div>
-      <div style={{ overflowX: "auto", border: "1px solid #e2e8f0", borderRadius: 8 }}>
-        <table style={{ width: "100%", minWidth: 920, borderCollapse: "collapse", fontSize: 13 }}>
-          <thead>
-            <tr style={{ background: "#f8fafc", textAlign: "left" }}>
-              <th style={{ padding: "8px 10px" }}>Company</th>
-              <th style={{ padding: "8px 10px" }}>Website</th>
-              <th style={{ padding: "8px 10px" }}>Tier</th>
-              <th style={{ padding: "8px 10px" }}>Status</th>
-              <th style={{ padding: "8px 10px" }}>Last contact</th>
-              <th style={{ padding: "8px 10px" }}>Next action</th>
-              <th style={{ padding: "8px 10px" }}>Reply type</th>
-              <th style={{ padding: "8px 10px", whiteSpace: "nowrap" }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={8} style={{ padding: 24, color: "#64748b" }}>
-                  Loading leads…
-                </td>
-              </tr>
-            ) : leads.length === 0 ? (
-              <tr>
-                <td colSpan={8} style={{ padding: 24, color: "#64748b" }}>
-                  No leads match these filters.
-                </td>
-              </tr>
-            ) : (
-              leads.map((lead) => {
-                const isDead = lead.status === "dead";
-                const closed =
-                  isDead || lead.status === "no_further_follow_up" || lead.touchCount >= 3;
-                const href = websiteHref(lead.website);
-                return (
-                  <tr key={lead.id} style={{ borderTop: "1px solid #eef2f7" }}>
-                    <td style={{ padding: "8px 10px", verticalAlign: "top" }}>
-                      <span style={{ fontWeight: 600 }}>{lead.companyName}</span>
-                      {isDead ? (
-                        <span
-                          style={{
-                            marginLeft: 8,
-                            fontSize: 11,
-                            fontWeight: 600,
-                            padding: "2px 6px",
-                            borderRadius: 4,
-                            background: "#f1f5f9",
-                            color: "#64748b"
-                          }}
-                        >
-                          Dead
-                        </span>
-                      ) : null}
-                      {lead.location ? (
-                        <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{lead.location}</div>
-                      ) : null}
-                    </td>
-                    <td style={{ padding: "8px 10px", verticalAlign: "top", maxWidth: 200 }}>
-                      {href ? (
-                        <a href={href} target="_blank" rel="noopener noreferrer" style={{ wordBreak: "break-all" }}>
-                          {lead.website}
-                        </a>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td style={{ padding: "8px 10px" }}>{lead.tier}</td>
-                    <td style={{ padding: "8px 10px" }}>{formatLeadRowStatus(lead)}</td>
-                    <td style={{ padding: "8px 10px", whiteSpace: "nowrap" }}>{lead.lastContactDate ?? "—"}</td>
-                    <td style={{ padding: "8px 10px" }}>{lead.nextAction}</td>
-                    <td style={{ padding: "8px 10px" }}>{formatTouchOutcomeLabel(lead.lastTouchOutcome)}</td>
-                    <td style={{ padding: "8px 10px", verticalAlign: "top" }}>
-                      <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
-                        <button type="button" disabled={closed} onClick={() => !closed && onLogTouch(lead)}>
-                          Log touch
+      <div className={styles.wrap}>
+        <div className={styles.grid}>
+          <div className={styles.headRow} role="row">
+            <div className={styles.th} role="columnheader">
+              Company
+            </div>
+            <div className={styles.th} role="columnheader">
+              Website
+            </div>
+            <div className={styles.th} role="columnheader">
+              Tier
+            </div>
+            <div className={styles.th} role="columnheader">
+              Status
+            </div>
+            <div className={styles.th} role="columnheader">
+              Last contact
+            </div>
+            <div className={styles.th} role="columnheader">
+              Next action
+            </div>
+            <div className={styles.th} role="columnheader">
+              Reply type
+            </div>
+            <div className={styles.th} role="columnheader">
+              Actions
+            </div>
+          </div>
+
+          {loading ? (
+            <div className={styles.row} role="row">
+              <div className={styles.td} style={{ gridColumn: "1 / -1" }}>
+                <div className={styles.emptyLabel}>Loading</div>
+                <p className={styles.meta} style={{ textAlign: "center" }}>
+                  Fetching leads…
+                </p>
+              </div>
+            </div>
+          ) : leads.length === 0 ? (
+            <div className={styles.row} role="row">
+              <div className={styles.td} style={{ gridColumn: "1 / -1" }}>
+                <div className={styles.empty}>
+                  <div className={styles.emptyLabel}>No matches</div>
+                  <button type="button" className="btn" onClick={() => onPageChange(1)}>
+                    Back to first page
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            leads.map((lead) => {
+              const isDead = lead.status === "dead";
+              const closed = isDead || lead.status === "no_further_follow_up" || lead.touchCount >= 3;
+              const href = websiteHref(lead.website);
+              return (
+                <div key={lead.id} className={styles.row} role="row">
+                  <div className={styles.td} role="cell">
+                    <span>{lead.companyName}</span>
+                    {isDead ? <span className={styles.deadMark}>Dead</span> : null}
+                    {lead.location ? <div className={styles.meta}>{lead.location}</div> : null}
+                  </div>
+                  <div className={`${styles.td} ${styles.mono}`} role="cell">
+                    {href ? (
+                      <a className={styles.link} href={href} target="_blank" rel="noopener noreferrer">
+                        {lead.website}
+                      </a>
+                    ) : (
+                      "—"
+                    )}
+                  </div>
+                  <div className={`${styles.td} ${styles.mono}`} role="cell">
+                    {lead.tier}
+                  </div>
+                  <div className={styles.td} role="cell">
+                    {formatLeadRowStatus(lead)}
+                  </div>
+                  <div className={`${styles.td} ${styles.mono}`} role="cell">
+                    {lead.lastContactDate ?? "—"}
+                  </div>
+                  <div className={`${styles.td} ${styles.mono}`} role="cell">
+                    {lead.nextAction}
+                  </div>
+                  <div className={styles.td} role="cell">
+                    {formatTouchOutcomeLabel(lead.lastTouchOutcome)}
+                  </div>
+                  <div className={styles.td} role="cell">
+                    <div className={styles.actions}>
+                      <button type="button" className="btnSecondary" disabled={closed} onClick={() => !closed && onLogTouch(lead)}>
+                        Log touch
+                      </button>
+                      {!isDead ? (
+                        <button type="button" className="btnSecondary" disabled={closed} onClick={() => !closed && onMarkDead(lead.id)}>
+                          Mark dead
                         </button>
-                        {!isDead ? (
-                          <button type="button" disabled={closed} onClick={() => !closed && onMarkDead(lead.id)}>
-                            Mark dead
-                          </button>
-                        ) : onUnmarkDead ? (
-                          <button type="button" onClick={() => void onUnmarkDead(lead.id)}>
-                            Un-mark dead
-                          </button>
-                        ) : null}
-                        <Link
-                          href={`/leads/${lead.id}`}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            padding: "6px 10px",
-                            border: "1px solid #ccd5e6",
-                            borderRadius: 8,
-                            textDecoration: "none",
-                            color: "#172033",
-                            fontSize: 13
-                          }}
-                        >
-                          View details
-                        </Link>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                      ) : onUnmarkDead ? (
+                        <button type="button" className="btnSecondary" onClick={() => void onUnmarkDead(lead.id)}>
+                          Un-mark dead
+                        </button>
+                      ) : null}
+                      <Link href={`/leads/${lead.id}`} className={styles.linkBtn}>
+                        View details
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
       </div>
 
-      <div className="between" style={{ marginTop: 10, flexWrap: "wrap", gap: 8 }}>
-        <span style={{ fontSize: 13, color: "#64748b" }}>
+      <div className={styles.pager}>
+        <span className={styles.pagerMeta}>
           {total === 0 ? "0 leads" : `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} of ${total}`}
         </span>
-        <div className="row">
-          <button type="button" disabled={page <= 1 || loading} onClick={() => onPageChange(page - 1)}>
+        <div className={styles.pagerNav}>
+          <button type="button" className="btnSecondary" disabled={page <= 1 || loading} onClick={() => onPageChange(page - 1)}>
             Previous
           </button>
-          <span style={{ fontSize: 13, padding: "0 8px" }}>
+          <span className={styles.pagerPage}>
             Page {page} / {totalPages}
           </span>
-          <button type="button" disabled={page >= totalPages || loading} onClick={() => onPageChange(page + 1)}>
+          <button type="button" className="btnSecondary" disabled={page >= totalPages || loading} onClick={() => onPageChange(page + 1)}>
             Next
           </button>
         </div>

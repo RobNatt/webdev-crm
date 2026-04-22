@@ -1,0 +1,139 @@
+.wrap {
+  overflow-x: auto;
+  border: 1px solid var(--c-border);
+}
+
+.grid {
+  min-width: 920px;
+}
+
+.headRow,
+.row {
+  display: grid;
+  grid-template-columns: 1.6fr 1.1fr 44px 100px 104px 120px 100px 1.35fr;
+  align-items: start;
+  gap: 0;
+}
+
+.headRow {
+  border-bottom: 1px solid var(--c-border);
+}
+
+.th {
+  padding: 8px 16px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-text-ghost);
+}
+
+.row {
+  border-bottom: 1px solid var(--c-border-subtle);
+  padding: 0;
+}
+
+.row:hover {
+  background: rgba(193, 196, 200, 0.12);
+}
+
+.td {
+  padding: 12px 16px;
+  font-size: 12.5px;
+  color: var(--c-text);
+}
+
+.meta {
+  font-size: 12px;
+  color: var(--c-text-muted);
+  margin-top: 4px;
+}
+
+.mono {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  color: var(--c-text);
+}
+
+.deadMark {
+  margin-left: 8px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+}
+
+.link {
+  word-break: break-all;
+  color: var(--c-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.linkBtn {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--c-border);
+  border-radius: 2px;
+  color: var(--c-text-muted);
+  text-decoration: none;
+}
+
+.linkBtn:hover {
+  border-color: var(--c-muted);
+  color: var(--c-text);
+}
+
+.pager {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.pagerMeta {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  color: var(--c-text-muted);
+}
+
+.pagerNav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pagerPage {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  color: var(--c-text-muted);
+  padding: 0 8px;
+}
+
+.empty {
+  padding: 32px 16px;
+  text-align: center;
+}
+
+.emptyLabel {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-text-ghost);
+  margin: 0 0 12px;
+}

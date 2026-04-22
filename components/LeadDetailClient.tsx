@@ -9,6 +9,7 @@ import { LeadDetailSummary } from "./lead-detail/LeadDetailSummary";
 import { LogTouchSection } from "./lead-detail/LogTouchSection";
 import { TouchpointTimeline } from "./lead-detail/TouchpointTimeline";
 import { Toast } from "./Toast";
+import detailStyles from "./LeadDetailClient.module.css";
 
 type Props = {
   leadId: string;
@@ -110,43 +111,48 @@ export function LeadDetailClient({ leadId }: Props) {
 
   if (loading) {
     return (
-      <main className="container">
-        <p>Loading…</p>
-      </main>
+      <div className={detailStyles.page}>
+        <p className={detailStyles.muted}>Loading…</p>
+      </div>
     );
   }
 
   if (loadError || !lead) {
     return (
-      <main className="container">
-        <p style={{ color: "#b42318" }}>{loadError ?? "Lead not found."}</p>
-        <Link href="/">Back to dashboard</Link>
-      </main>
+      <div className={detailStyles.page}>
+        <p className={detailStyles.muted}>{loadError ?? "Lead not found."}</p>
+        <Link href="/" className={detailStyles.back}>
+          Back to dashboard
+        </Link>
+      </div>
     );
   }
 
   return (
-    <main className="container">
+    <div className={detailStyles.page}>
       <Toast message={toast} />
-      <p style={{ marginBottom: 8 }}>
-        <Link href="/">← Back to dashboard</Link>
-      </p>
+      <div className={detailStyles.topbar}>
+        <Link href="/" className={detailStyles.back}>
+          ← Back to dashboard
+        </Link>
+        <h1 className="topbarTitle">Lead record</h1>
+      </div>
 
-      <header style={{ marginBottom: 20 }}>
-        <h1 style={{ margin: "0 0 8px", fontSize: 26 }}>{lead.companyName}</h1>
-        <p style={{ margin: 0, color: "#64748b", fontSize: 14 }}>
-          Lead workspace · {lead.touchCount} touch{lead.touchCount === 1 ? "" : "es"} logged
+      <header className={detailStyles.headerBlock}>
+        <h2 className="pageTitle">{lead.companyName}</h2>
+        <p className={detailStyles.sub}>
+          <span className="mono">{lead.touchCount}</span> touch{lead.touchCount === 1 ? "" : "es"} logged
         </p>
-        <div className="row" style={{ marginTop: 14, flexWrap: "wrap", gap: 8 }}>
-          <button type="button" disabled={Boolean(closed)} onClick={scrollToLogTouch}>
+        <div className={detailStyles.actions}>
+          <button type="button" className="btn" disabled={Boolean(closed)} onClick={scrollToLogTouch}>
             Log touch
           </button>
           {!isDead ? (
-            <button type="button" disabled={Boolean(closed)} onClick={() => void patchLeadStatus("mark_dead")}>
+            <button type="button" className="btnSecondary" disabled={Boolean(closed)} onClick={() => void patchLeadStatus("mark_dead")}>
               Mark as dead
             </button>
           ) : (
-            <button type="button" onClick={() => void patchLeadStatus("unmark_dead")}>
+            <button type="button" className="btnSecondary" onClick={() => void patchLeadStatus("unmark_dead")}>
               Un-mark as dead
             </button>
           )}
@@ -162,6 +168,6 @@ export function LeadDetailClient({ leadId }: Props) {
         disabled={Boolean(closed)}
         onSubmit={handleLogTouchSubmit}
       />
-    </main>
+    </div>
   );
 }

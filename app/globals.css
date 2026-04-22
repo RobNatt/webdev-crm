@@ -1,37 +1,230 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap");
+
 :root {
+  --c-bg: #f5f6f7;
+  --c-surface: #f5f6f7;
+  --c-mid: #c1c4c8;
+  --c-muted: #7b7f85;
+  --c-ink: #2b2e33;
+  --c-border: #c1c4c8;
+  --c-border-subtle: rgba(193, 196, 200, 0.5);
+  --c-text: #2b2e33;
+  --c-text-muted: #7b7f85;
+  --c-text-ghost: #c1c4c8;
   color-scheme: light;
 }
 
-* {
+@media (prefers-color-scheme: dark) {
+  :root {
+    --c-bg: #2b2e33;
+    --c-surface: #2b2e33;
+    --c-mid: #7b7f85;
+    --c-muted: #c1c4c8;
+    --c-ink: #f5f6f7;
+    --c-border: #7b7f85;
+    --c-border-subtle: rgba(123, 127, 133, 0.4);
+    --c-text: #f5f6f7;
+    --c-text-muted: #c1c4c8;
+    --c-text-ghost: #7b7f85;
+    color-scheme: dark;
+  }
+}
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
 }
 
 body {
   margin: 0;
-  font-family: Arial, Helvetica, sans-serif;
-  background: #f5f7fb;
-  color: #172033;
+  font-family: "IBM Plex Sans", -apple-system, sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  background: var(--c-bg);
+  color: var(--c-text);
+  -webkit-font-smoothing: antialiased;
 }
 
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
+.mono {
+  font-family: "IBM Plex Mono", monospace;
+}
+
+/* Labels / microcopy */
+.labelCaps {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+}
+
+.labelCapsGhost {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-text-ghost);
+}
+
+.pageTitle {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--c-text);
+  margin: 0;
+}
+
+code {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+}
+
+.topbarTitle {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--c-text);
+  margin: 0;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--c-ink);
+  color: var(--c-bg);
+  border: 1px solid var(--c-ink);
+  border-radius: 2px;
+  padding: 6px 14px;
+  font-family: "IBM Plex Sans", -apple-system, sans-serif;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:hover:not(:disabled) {
+  background: #1a1c20;
+  border-color: #1a1c20;
+  color: var(--c-bg);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btnSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--c-text-muted);
+  border: 1px solid var(--c-border);
+  border-radius: 2px;
+  padding: 6px 14px;
+  font-family: "IBM Plex Sans", -apple-system, sans-serif;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btnSecondary:hover:not(:disabled) {
+  border-color: var(--c-muted);
+  color: var(--c-text);
+}
+
+.btnSecondary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Form controls */
+.input,
+.select,
+.textarea {
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: 2px;
+  padding: 7px 10px;
+  font-family: "IBM Plex Sans", -apple-system, sans-serif;
+  font-size: 13px;
+  color: var(--c-text);
+  width: 100%;
+  max-width: 100%;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  border-color: var(--c-ink);
+  outline: none;
+}
+
+.fieldLabel {
+  display: block;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+  margin-bottom: 6px;
+}
+
+/* Legacy layout helpers (components still compose these) */
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 0;
+  padding: 16px;
 }
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 24px;
   align-items: start;
 }
 
-.workspace-aside {
+.workspaceAside {
   display: flex;
   flex-direction: column;
   gap: 16px;
   min-width: 0;
   align-self: start;
+}
+
+@media (max-width: 960px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
 }
 
 .grid {
@@ -40,56 +233,8 @@ body {
   gap: 16px;
 }
 
-.card {
-  background: #fff;
-  border: 1px solid #dde3ee;
-  border-radius: 12px;
-  padding: 14px;
-}
-
-.row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.between {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-button {
-  border: 1px solid #ccd5e6;
-  background: #fdfefe;
-  border-radius: 8px;
-  padding: 6px 10px;
-  cursor: pointer;
-}
-
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-input,
-select,
-textarea {
-  border: 1px solid #ccd5e6;
-  border-radius: 8px;
-  padding: 6px 8px;
-  font: inherit;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th,
-td {
-  text-align: left;
-  border-bottom: 1px solid #ecf0f7;
-  padding: 8px 6px;
-  font-size: 14px;
+@media (max-width: 720px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
 }

@@ -4,6 +4,7 @@ import { experimental_useObject } from "@ai-sdk/react";
 import { FormEvent, useMemo, useState } from "react";
 import { apiFetch } from "../lib/apiFetch";
 import { crmAssistantResultSchema, type CrmAssistantResult } from "../lib/crmAiSchema";
+import styles from "./AIAssistantPanel.module.css";
 
 type ChatMessage =
   | { id: string; role: "user"; text: string }
@@ -125,85 +126,62 @@ export function AIAssistantPanel({ onAppliedAction }: Props) {
   const draft = object;
   const showDraft = isLoading || Boolean(draft?.recommendedLeads?.length || draft?.summary);
 
+  const asideStyle =
+    dockMode === "right" ? ({ width: panelWidth } as const) : ({ width: "100%", height: panelHeight, marginTop: 16 } as const);
+
   return (
-    <aside
-      className="card"
-      style={dockMode === "right" ? { width: panelWidth } : { width: "100%", height: panelHeight, marginTop: 16 }}
-    >
-      <div className="between">
-        <h3 style={{ margin: 0 }}>AI Assistant</h3>
+    <aside className={styles.panel} style={asideStyle}>
+      <div className={styles.header}>
+        <h3 className={styles.title}>AI assistant</h3>
         <div className="row">
-          <button type="button" onClick={() => setDockMode((prev) => (prev === "right" ? "bottom" : "right"))}>
-            {dockMode === "right" ? "Bottom Dock" : "Right Sidebar"}
+          <button type="button" className="btnSecondary" onClick={() => setDockMode((prev) => (prev === "right" ? "bottom" : "right"))}>
+            {dockMode === "right" ? "Bottom dock" : "Right sidebar"}
           </button>
         </div>
       </div>
-      <div className="row" style={{ margin: "8px 0" }}>
+      <div className={styles.controls}>
         {dockMode === "right" ? (
           <>
             <label htmlFor="panel-width">Width</label>
-            <input
-              id="panel-width"
-              type="range"
-              min={300}
-              max={520}
-              value={panelWidth}
-              onChange={(event) => setPanelWidth(Number(event.target.value))}
-            />
+            <input id="panel-width" type="range" min={300} max={520} value={panelWidth} onChange={(event) => setPanelWidth(Number(event.target.value))} />
           </>
         ) : (
           <>
             <label htmlFor="panel-height">Height</label>
-            <input
-              id="panel-height"
-              type="range"
-              min={220}
-              max={460}
-              value={panelHeight}
-              onChange={(event) => setPanelHeight(Number(event.target.value))}
-            />
+            <input id="panel-height" type="range" min={220} max={460} value={panelHeight} onChange={(event) => setPanelHeight(Number(event.target.value))} />
           </>
         )}
       </div>
-      <div style={{ maxHeight: dockMode === "right" ? 420 : panelHeight - 120, overflow: "auto", marginBottom: 8 }}>
+      <div className={styles.scroll} style={{ maxHeight: dockMode === "right" ? 420 : panelHeight - 120 }}>
         {messages.map((message) => (
-          <div
-            key={message.id}
-            style={{
-              border: "1px solid #e6ebf4",
-              borderRadius: 10,
-              padding: 8,
-              marginBottom: 8,
-              background: message.role === "assistant" ? "#f8faff" : "#fff"
-            }}
-          >
-            <strong>{message.role === "assistant" ? "Assistant" : "You"}</strong>
-            <p style={{ margin: "6px 0 0" }}>{message.text}</p>
+          <div key={message.id} className={styles.msg}>
+            <div className={styles.msgRole}>{message.role === "assistant" ? "Assistant" : "You"}</div>
+            <p className={styles.msgBody}>{message.text}</p>
             {message.role === "assistant" && message.crm?.recommendedLeads?.length ? (
-              <div style={{ marginTop: 8 }}>
-                <strong>Lead preview</strong>
+              <div className={styles.subBlock}>
+                <div className={styles.subHead}>Lead preview</div>
                 {message.crm.recommendedLeads.slice(0, 5).map((row) => (
-                  <div key={row.leadId} style={{ fontSize: 13 }}>
-                    #{row.leadId} {row.companyName} (Tier {row.tier}) {"->"} {row.scriptName}
+                  <div key={row.leadId} className={styles.mono}>
+                    #{row.leadId} {row.companyName} (Tier {row.tier}) → {row.scriptName}
                   </div>
                 ))}
               </div>
             ) : null}
             {message.role === "assistant" && message.crm?.scriptsToUse?.length ? (
-              <div style={{ marginTop: 8 }}>
-                <strong>Scripts</strong>
+              <div className={styles.subBlock}>
+                <div className={styles.subHead}>Scripts</div>
                 {message.crm.scriptsToUse.slice(0, 3).map((s) => (
-                  <div key={s.scriptId} style={{ fontSize: 13 }}>
+                  <div key={s.scriptId} className={styles.mono}>
                     {s.name} (#{s.scriptId})
                   </div>
                 ))}
               </div>
             ) : null}
             {message.role === "assistant" && message.crm?.enrichCandidates?.length ? (
-              <div style={{ marginTop: 8 }}>
-                <strong>Enrichment</strong>
+              <div className={styles.subBlock}>
+                <div className={styles.subHead}>Enrichment</div>
                 {message.crm.enrichCandidates.slice(0, 5).map((row) => (
-                  <div key={row.leadId} style={{ fontSize: 13 }}>
+                  <div key={row.leadId} className={styles.mono}>
                     #{row.leadId} {row.companyName} missing {(row.missing ?? []).join(", ")}
                   </div>
                 ))}
@@ -213,52 +191,39 @@ export function AIAssistantPanel({ onAppliedAction }: Props) {
         ))}
 
         {showDraft ? (
-          <div
-            style={{
-              border: "1px dashed #9db7ff",
-              borderRadius: 10,
-              padding: 8,
-              marginBottom: 8,
-              background: "#f4f7ff"
-            }}
-          >
-            <strong>{isLoading ? "Streaming plan…" : "Last streamed object"}</strong>
-            {draft?.summary ? <p style={{ margin: "6px 0 0", fontSize: 14 }}>{draft.summary}</p> : null}
+          <div className={styles.draft}>
+            <div className={styles.subHead}>{isLoading ? "Streaming plan" : "Last streamed object"}</div>
+            {draft?.summary ? <p className={styles.msgBody}>{draft.summary}</p> : null}
             {draft?.recommendedLeads?.length ? (
-              <div style={{ marginTop: 8, fontSize: 13 }}>
-                <strong>recommendedLeads</strong> ({draft.recommendedLeads.length})
+              <div className={styles.subBlock}>
+                <div className={styles.subHead}>recommendedLeads ({draft.recommendedLeads.length})</div>
                 {draft.recommendedLeads.slice(0, 5).map((row, i) => (
-                  <div key={`${row?.leadId ?? i}`}>
+                  <div key={`${row?.leadId ?? i}`} className={styles.mono}>
                     #{row?.leadId} {row?.companyName} tier {row?.tier}
                   </div>
                 ))}
               </div>
             ) : null}
-            {error ? <p style={{ color: "#b42318", marginTop: 6 }}>{error.message}</p> : null}
+            {error ? <p className={styles.subBlock}>{error.message}</p> : null}
           </div>
         ) : null}
       </div>
 
-      <div className="row" style={{ marginBottom: 8, flexWrap: "wrap" }}>
-        <button type="button" onClick={applyTodayList} disabled={!latestCrm?.recommendedLeads?.length}>
+      <div className={styles.actions}>
+        <button type="button" className="btnSecondary" onClick={applyTodayList} disabled={!latestCrm?.recommendedLeads?.length}>
           Create today&apos;s list
         </button>
-        <button type="button" onClick={queueEnrichment} disabled={!latestCrm?.enrichCandidates?.length}>
+        <button type="button" className="btnSecondary" onClick={queueEnrichment} disabled={!latestCrm?.enrichCandidates?.length}>
           Enrich these leads
         </button>
-        <button type="button" onClick={saveSuggestedScript} disabled={!latestCrm?.scriptsToUse?.length}>
+        <button type="button" className="btnSecondary" onClick={saveSuggestedScript} disabled={!latestCrm?.scriptsToUse?.length}>
           Save script draft
         </button>
       </div>
-      <form className="row" onSubmit={sendMessage}>
-        <input
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          placeholder="Ask: /today, /enrich, /scripts"
-          style={{ flex: 1 }}
-        />
-        <button type="submit" disabled={isLoading}>
-          {isLoading ? "Thinking..." : "Send"}
+      <form className={styles.formRow} onSubmit={sendMessage}>
+        <input className="input" value={input} onChange={(event) => setInput(event.target.value)} placeholder="Ask: /today, /enrich, /scripts" />
+        <button type="submit" className="btn" disabled={isLoading}>
+          {isLoading ? "Thinking…" : "Send"}
         </button>
       </form>
     </aside>

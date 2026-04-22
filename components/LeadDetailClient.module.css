@@ -1,0 +1,47 @@
+.page {
+  padding: 28px 32px;
+}
+
+.topbar {
+  border-bottom: 1px solid var(--c-border);
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+
+.back {
+  font-size: 12px;
+  color: var(--c-text-muted);
+  text-decoration: none;
+  display: inline-block;
+  margin-bottom: 16px;
+}
+
+.back:hover {
+  color: var(--c-text);
+}
+
+.headerBlock {
+  margin-bottom: 24px;
+}
+
+.sub {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--c-text-muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.sectionGap {
+  margin-bottom: 16px;
+}
+
+.muted {
+  font-size: 12px;
+  color: var(--c-text-muted);
+}

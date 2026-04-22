@@ -11,6 +11,7 @@ import { apiFetch } from "../lib/apiFetch";
 import { fetchJson } from "../lib/fetchJson";
 import { mapCsvRowToApiLead, parseLeadsCsv } from "../lib/parseLeadsCsv";
 import type { Lead, LogTouchPayload, Script, TodoItem } from "../lib/types";
+import dashboardStyles from "./DashboardClient.module.css";
 
 export function DashboardClient() {
   const [scripts, setScripts] = useState<Script[]>([]);
@@ -188,30 +189,30 @@ export function DashboardClient() {
     bumpLeadList();
   };
 
+  const activeScripts = scripts.filter((s) => s.active).length;
+
   return (
-    <main className="container">
-      <h1>webdev-crm</h1>
-      <p>AI-assisted outreach workflow with 3-touch cadence and 20-30/day hard cap.</p>
+    <div className={dashboardStyles.page}>
+      <header className={dashboardStyles.topbar}>
+        <h1 className="topbarTitle">Dashboard</h1>
+      </header>
       <Toast message={toast} />
-      {message ? <p>{message}</p> : null}
+      {message ? <p className={dashboardStyles.message}>{message}</p> : null}
       <div className="workspace">
-        <section style={{ minWidth: 0 }}>
+        <section className={dashboardStyles.sectionStack}>
           <UploadCard onUpload={handleUpload} busy={uploading} />
-          <div style={{ marginTop: 16 }}>
-            <LeadList
-              scripts={scripts}
-              refreshVersion={leadListVersion}
-              onLogTouchSubmit={handleLogTouchSubmit}
-              onMarkDead={handleMarkDead}
-              onUnmarkDead={handleUnmarkDead}
-              onFetchError={(msg) => setMessage(msg)}
-            />
-          </div>
-          <div style={{ marginTop: 16 }}>
-            <ScriptLibrary scripts={scripts} onCreateScript={handleCreateScript} onDeleteScript={handleDeleteScript} />
-          </div>
+          <LeadList
+            scripts={scripts}
+            refreshVersion={leadListVersion}
+            activeScripts={activeScripts}
+            onLogTouchSubmit={handleLogTouchSubmit}
+            onMarkDead={handleMarkDead}
+            onUnmarkDead={handleUnmarkDead}
+            onFetchError={(msg) => setMessage(msg)}
+          />
+          <ScriptLibrary scripts={scripts} onCreateScript={handleCreateScript} onDeleteScript={handleDeleteScript} />
         </section>
-        <div className="workspace-aside">
+        <div className="workspaceAside">
           <AIAssistantPanel onAppliedAction={refresh} />
           <TodayToDoPanel
             items={todo}
@@ -221,6 +222,6 @@ export function DashboardClient() {
           />
         </div>
       </div>
-    </main>
+    </div>
   );
 }

@@ -1,0 +1,41 @@
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.searchBlock {
+  margin-bottom: 16px;
+}
+
+.stages {
+  margin-bottom: 16px;
+}
+
+.stageRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.tierRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.chipActive {
+  border-color: var(--c-ink) !important;
+  color: var(--c-text) !important;
+  font-weight: 500 !important;
+}

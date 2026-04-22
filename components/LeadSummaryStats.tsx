@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import styles from "./LeadSummaryStats.module.css";
 
 export type LeadSummaryStatsData = {
   todayEligible: number;
@@ -12,64 +13,57 @@ type Props = {
   stats: LeadSummaryStatsData | null;
   loading: boolean;
   error?: string | null;
+  /** Active script rows in library (fourth metric cell). */
+  activeScripts: number;
 };
 
-export function LeadSummaryStats({ stats, loading, error }: Props) {
+export function LeadSummaryStats({ stats, loading, error, activeScripts }: Props) {
   const [showDead, setShowDead] = useState(false);
 
+  if (error) {
+    return <p className={styles.error}>{error}</p>;
+  }
+
   return (
-    <div style={{ marginBottom: 16 }}>
-      <h2 style={{ fontSize: 15, color: "#475569", fontWeight: 600, margin: "0 0 10px" }}>Pipeline pulse</h2>
-      {error ? (
-        <p style={{ color: "#b42318", fontSize: 14 }}>{error}</p>
-      ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-            gap: 12
-          }}
-        >
-          <div className="card" style={{ margin: 0 }}>
-            <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>Ready today</div>
-            <div style={{ fontSize: 28, fontWeight: 800, marginTop: 6, lineHeight: 1.1 }}>
-              {loading ? "—" : stats?.todayEligible ?? "—"}
-            </div>
-            <p style={{ margin: "8px 0 0", fontSize: 13, color: "#64748b" }}>Leads in your 20–30 outreach pool (not dead, under 3 touches).</p>
-          </div>
-          <div className="card" style={{ margin: 0 }}>
-            <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>Strong fits, thin contact</div>
-            <div style={{ fontSize: 28, fontWeight: 800, marginTop: 6, lineHeight: 1.1 }}>
-              {loading ? "—" : stats?.highTierMissingContact ?? "—"}
-            </div>
-            <p style={{ margin: "8px 0 0", fontSize: 13, color: "#64748b" }}>
-              Tier 1–2 leads missing email <strong>or</strong> phone — worth enriching first.
-            </p>
-          </div>
-          <div className="card" style={{ margin: 0, opacity: showDead ? 1 : 0.95 }}>
-            <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>Dead leads</div>
-            {showDead ? (
-              <>
-                <div style={{ fontSize: 28, fontWeight: 800, marginTop: 6, lineHeight: 1.1, color: "#64748b" }}>
-                  {loading ? "—" : stats?.dead ?? "—"}
-                </div>
-                <p style={{ margin: "8px 0 0", fontSize: 13, color: "#64748b" }}>Soft-closed — hidden from today&apos;s list unless you choose to show them.</p>
-                <button type="button" style={{ marginTop: 10 }} onClick={() => setShowDead(false)}>
-                  Hide count
-                </button>
-              </>
-            ) : (
-              <>
-                <div style={{ fontSize: 15, fontWeight: 600, marginTop: 10, color: "#94a3b8" }}>Hidden</div>
-                <p style={{ margin: "8px 0 0", fontSize: 13, color: "#64748b" }}>We don&apos;t surface dead leads in your daily queue by default.</p>
-                <button type="button" style={{ marginTop: 10 }} onClick={() => setShowDead(true)}>
-                  Show dead count
-                </button>
-              </>
-            )}
-          </div>
+    <div>
+      <h2 className={styles.heading}>Pipeline pulse</h2>
+      <div className={styles.strip}>
+        <div className={styles.cell}>
+          <div className={styles.label}>Ready today</div>
+          <div className={styles.value}>{loading ? "—" : stats?.todayEligible ?? "—"}</div>
+          <div className={styles.delta}>20–30 pool · not dead · under 3 touches</div>
         </div>
-      )}
+        <div className={styles.cell}>
+          <div className={styles.label}>Strong fits, thin contact</div>
+          <div className={styles.value}>{loading ? "—" : stats?.highTierMissingContact ?? "—"}</div>
+          <div className={styles.delta}>Tier 1–2 · missing email or phone</div>
+        </div>
+        <div className={styles.cell}>
+          <div className={styles.label}>Dead leads</div>
+          {showDead ? (
+            <>
+              <div className={styles.value}>{loading ? "—" : stats?.dead ?? "—"}</div>
+              <div className={styles.delta}>Soft-closed · off today&apos;s queue by default</div>
+              <button type="button" className="btnSecondary" style={{ marginTop: 12 }} onClick={() => setShowDead(false)}>
+                Hide count
+              </button>
+            </>
+          ) : (
+            <>
+              <div className={styles.hiddenLabel}>Hidden</div>
+              <div className={styles.delta}>Not shown in daily queue unless toggled</div>
+              <button type="button" className="btnSecondary" style={{ marginTop: 12 }} onClick={() => setShowDead(true)}>
+                Show dead count
+              </button>
+            </>
+          )}
+        </div>
+        <div className={styles.cell}>
+          <div className={styles.label}>Active scripts</div>
+          <div className={styles.value}>{activeScripts}</div>
+          <div className={styles.delta}>Library · used for logging &amp; queue</div>
+        </div>
+      </div>
     </div>
   );
 }

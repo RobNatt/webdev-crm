@@ -1,6 +1,7 @@
 "use client";
 
 import { TodoItem } from "../lib/types";
+import styles from "./TodayToDoPanel.module.css";
 
 type Props = {
   items: TodoItem[];
@@ -11,60 +12,61 @@ type Props = {
 
 export function TodayToDoPanel({ items, cap, showDeadInToday, onShowDeadInTodayChange }: Props) {
   const reachedCap = items.length >= cap;
+
   return (
     <div className="card">
-      <div className="between">
-        <h3>Today&apos;s To-Do</h3>
-        <strong>
+      <div className={styles.header}>
+        <h3 className={styles.title}>Today&apos;s to-do</h3>
+        <span className={styles.cap}>
           {items.length}/{cap}
-        </strong>
+        </span>
       </div>
-      <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, fontSize: 14 }}>
-        <input
-          type="checkbox"
-          checked={showDeadInToday}
-          onChange={(e) => onShowDeadInTodayChange(e.target.checked)}
-        />
-        Show dead in today&apos;s list
+      <label className={styles.checkboxRow}>
+        <input type="checkbox" checked={showDeadInToday} onChange={(e) => onShowDeadInTodayChange(e.target.checked)} />
+        <span>Show dead in today&apos;s list</span>
       </label>
-      {reachedCap ? <p style={{ color: "#a33" }}>Daily cap reached. No new tasks allowed.</p> : null}
-      <table>
-        <thead>
-          <tr>
-            <th>Lead</th>
-            <th>Method</th>
-            <th>Script</th>
-            <th>Overdue</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((todo) => (
-            <tr key={todo.id}>
-              <td>
-                {todo.leadName}
-                {todo.leadStatus === "dead" ? (
-                  <span
-                    style={{
-                      marginLeft: 8,
-                      fontSize: 11,
-                      fontWeight: 600,
-                      padding: "2px 6px",
-                      borderRadius: 4,
-                      background: "#f1f5f9",
-                      color: "#64748b"
-                    }}
-                  >
-                    Dead
+      {reachedCap ? <p className={styles.capNote}>Daily cap reached. No new tasks allowed.</p> : null}
+      <div className={styles.table}>
+        <div className={styles.headRow} role="row">
+          <div className={styles.th} role="columnheader">
+            Lead
+          </div>
+          <div className={styles.th} role="columnheader">
+            Method
+          </div>
+          <div className={styles.th} role="columnheader">
+            Script
+          </div>
+          <div className={styles.th} role="columnheader">
+            Queue
+          </div>
+        </div>
+        {items.map((todo) => {
+          const overdue = Boolean(todo.overdue);
+          return (
+            <div key={todo.id} className={styles.row} role="row">
+              <div className={styles.td} role="cell">
+                <div className={styles.leadCell}>
+                  <span className={styles.statusDot} aria-hidden>
+                    {overdue ? <span className={styles.statusPending}>○</span> : <span className={styles.statusActive}>●</span>}
                   </span>
-                ) : null}
-              </td>
-              <td>{todo.method}</td>
-              <td>{todo.scriptName}</td>
-              <td>{todo.overdue ? "Yes" : "No"}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                  <span>{todo.leadName}</span>
+                  {todo.leadStatus === "dead" ? <span className={styles.deadTag}>Dead</span> : null}
+                </div>
+              </div>
+              <div className={`${styles.td} ${styles.mono}`} role="cell">
+                {todo.method}
+              </div>
+              <div className={styles.td} role="cell">
+                {todo.scriptName}
+              </div>
+              <div className={styles.td} role="cell">
+                <span className={overdue ? styles.statusPending : styles.statusActive}>{overdue ? "Overdue" : "Due"}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

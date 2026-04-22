@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import type { Lead, LeadTouchOutcome, LogTouchPayload, Method, Script } from "../lib/types";
+import styles from "./LogTouchModal.module.css";
 
 type Props = {
   lead: Lead | null;
@@ -46,8 +47,7 @@ export function LogTouchModal({ lead, scripts, open, onClose, onSubmit }: Props)
 
   if (!open || !lead) return null;
 
-  const closed =
-    lead.status === "dead" || lead.status === "no_further_follow_up" || lead.touchCount >= 3;
+  const closed = lead.status === "dead" || lead.status === "no_further_follow_up" || lead.touchCount >= 3;
 
   const handleFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -72,61 +72,33 @@ export function LogTouchModal({ lead, scripts, open, onClose, onSubmit }: Props)
   return (
     <div
       role="presentation"
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(15, 23, 42, 0.45)",
-        zIndex: 1100,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 16
-      }}
+      className={styles.backdrop}
       onMouseDown={(ev) => {
         if (ev.target === ev.currentTarget && !submitting) onClose();
       }}
     >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="log-touch-title"
-        className="card"
-        style={{ maxWidth: 440, width: "100%", margin: 0 }}
-        onMouseDown={(ev) => ev.stopPropagation()}
-      >
-        <h3 id="log-touch-title" style={{ marginTop: 0 }}>
+      <div role="dialog" aria-modal="true" aria-labelledby="log-touch-title" className={styles.dialog} onMouseDown={(ev) => ev.stopPropagation()}>
+        <h3 id="log-touch-title" className={styles.dialogTitle}>
           Log touch — {lead.companyName}
         </h3>
         {closed ? (
-          <p style={{ color: "#a33" }}>This lead is closed for further outreach.</p>
+          <p className={styles.closedNote}>This lead is closed for further outreach.</p>
         ) : (
           <form onSubmit={handleFormSubmit}>
-            <div style={{ marginBottom: 12 }}>
-              <label htmlFor="touch-method" style={{ display: "block", fontWeight: 600, marginBottom: 4 }}>
+            <div className={styles.field}>
+              <label htmlFor="touch-method" className="fieldLabel">
                 Contact method
               </label>
-              <select
-                id="touch-method"
-                value={method}
-                onChange={(ev) => setMethod(ev.target.value as Method)}
-                disabled={submitting}
-                style={{ width: "100%" }}
-              >
+              <select id="touch-method" className="select" value={method} onChange={(ev) => setMethod(ev.target.value as Method)} disabled={submitting}>
                 <option value="email">Email</option>
                 <option value="call">Call</option>
               </select>
             </div>
-            <div style={{ marginBottom: 12 }}>
-              <label htmlFor="touch-outcome" style={{ display: "block", fontWeight: 600, marginBottom: 4 }}>
+            <div className={styles.field}>
+              <label htmlFor="touch-outcome" className="fieldLabel">
                 Reply / outcome
               </label>
-              <select
-                id="touch-outcome"
-                value={outcome}
-                onChange={(ev) => setOutcome(ev.target.value as LeadTouchOutcome)}
-                disabled={submitting}
-                style={{ width: "100%" }}
-              >
+              <select id="touch-outcome" className="select" value={outcome} onChange={(ev) => setOutcome(ev.target.value as LeadTouchOutcome)} disabled={submitting}>
                 {OUTCOMES.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
@@ -134,35 +106,31 @@ export function LogTouchModal({ lead, scripts, open, onClose, onSubmit }: Props)
                 ))}
               </select>
             </div>
-            <div style={{ marginBottom: 12 }}>
-              <label htmlFor="touch-notes" style={{ display: "block", fontWeight: 600, marginBottom: 4 }}>
+            <div className={styles.field}>
+              <label htmlFor="touch-notes" className="fieldLabel">
                 Notes (optional)
               </label>
               <textarea
                 id="touch-notes"
+                className="textarea"
                 value={notes}
                 onChange={(ev) => setNotes(ev.target.value)}
                 disabled={submitting}
                 rows={3}
                 placeholder="What was said, next step, etc."
-                style={{ width: "100%", resize: "vertical" }}
               />
             </div>
-            {scripts.length === 0 ? (
-              <p style={{ color: "#a33", fontSize: 14 }}>
-                Add at least one active script for this lead&apos;s tier before logging touches.
-              </p>
-            ) : null}
+            {scripts.length === 0 ? <p className={styles.closedNote}>Add at least one active script for this lead&apos;s tier before logging touches.</p> : null}
             {error ? (
-              <p role="alert" style={{ color: "#b42318", fontSize: 14 }}>
+              <p role="alert" className={styles.closedNote}>
                 {error}
               </p>
             ) : null}
-            <div className="row" style={{ marginTop: 16, justifyContent: "flex-end" }}>
-              <button type="button" onClick={onClose} disabled={submitting}>
+            <div className={styles.actions}>
+              <button type="button" className="btnSecondary" onClick={onClose} disabled={submitting}>
                 Cancel
               </button>
-              <button type="submit" disabled={submitting || closed || scripts.length === 0}>
+              <button type="submit" className="btn" disabled={submitting || closed || scripts.length === 0}>
                 {submitting ? "Saving…" : "Save touch"}
               </button>
             </div>
